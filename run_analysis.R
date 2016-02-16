@@ -8,9 +8,9 @@ run_analysis <- function () {
 
   #Make a histogram of the total number of steps taken each day
   dailysteps <- aggregate(steps ~ date, data=activity, FUN="sum")
-  png(filename='figures/steps.png',width=480,height=480,units='px')
+  png(filename='figures/steps_1.png',width=480,height=480,units='px')
   plot(activity$date,activity$steps,ylab='Number of Steps', xlab="", type="l")
- 
+  dev.off()
   #calculate mean of steps
   step_mean <- mean(dailysteps$steps)
   
@@ -37,17 +37,39 @@ run_analysis <- function () {
   activity_new <- activity_new[, c(1:3)]
 
   #plot new data
-  dailysteps <- aggregate(steps ~ date, data=activity_new, FUN="sum")
+  dailysteps_new <- aggregate(steps ~ date, data=activity_new, FUN="sum")
   png(filename='figures/steps_new.png',width=480,height=480,units='px')
   plot(activity_new$date,activity_new$steps,ylab='Number of Steps', xlab="", type="l")
   dev.off()
   
   #calculate mean of steps with new data
-  step_mean <- mean(dailysteps$steps)
+  step_mean <- mean(dailysteps_new$steps)
   #10766.19
   #calculate median of steps with new data
-  step_median <- median(dailysteps$steps)
+  step_median <- median(dailysteps_new$steps)
   #10765
   #imputing data did not appear to change the results
+  
+  
+  # functin to identify weekend or weekday
+  daytype <- function(date) {
+    if (weekdays(as.Date(date)) %in% c("Saturday", "Sunday")) {
+      "weekend"
+    } else {
+      "weekday"
+    }
+  }
+  # convert daytime from character to factor
+  activity_new$daytype <- as.factor(sapply(activity_new$date, daytype))
+  
+  # aggreagate new data and include weekend or weekday value based on mean
+  dailysteps_new <- aggregate(steps ~ interval + daytype, activity_new, mean)
+  library(lattice)
+  
+  #2 plots showing average from weekend and weekday
+  dayofweek <- xyplot(steps ~ interval | daytype, data=dailysteps_new, layout=c(2,1), type='l')
+  trellis.device(device="png", filename='figures/weekend_weekday.png')
+  print(dayofweek)
+  dev.off()
 
 }
